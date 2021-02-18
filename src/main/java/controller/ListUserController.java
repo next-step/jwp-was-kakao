@@ -1,52 +1,38 @@
 package controller;
 
-import com.github.jknack.handlebars.Handlebars;
-import com.github.jknack.handlebars.Template;
-import com.github.jknack.handlebars.io.ClassPathTemplateLoader;
-import com.github.jknack.handlebars.io.TemplateLoader;
 import db.DataBase;
-import model.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import request.HttpRequest;
 import response.HttpResponse;
 import response.HttpResponseStatusCode;
-import utils.IOUtils;
-
+import service.ListUserService;
+import utils.TemplateUtils;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-
-
 
 public class ListUserController extends AbstractController {
 
+    private final ListUserService listUserService = new ListUserService();
+    private static final Logger logger = LoggerFactory.getLogger(ListUserController.class);
     private static final String LOGIN_PAGE = "/user/login.html";
 
     @Override
     public void doGet(HttpRequest httpRequest, HttpResponse httpResponse) {
         if (httpRequest.isLogined()) {
             try {
-                httpResponse.addResponseBody(makeListUserTemplate());
-                httpResponse.send(HttpResponseStatusCode.OK);
+                httpResponse
+                        .addResponseBody(listUserService.makeTemplateBodyByUser())
+                        .send(HttpResponseStatusCode.OK)
+                        .build();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage());
             }
             return;
         }
-        httpResponse.addRedirectionLocationHeader(LOGIN_PAGE);
-        httpResponse.addSetCookieHeader(false);
-        httpResponse.send(HttpResponseStatusCode.FOUND);
-    }
-
-    private byte[] makeListUserTemplate() throws IOException{
-        Collection<User> users = DataBase.findAll();
-        TemplateLoader loader = new ClassPathTemplateLoader();
-        loader.setPrefix("/templates");
-        loader.setSuffix(".html");
-        Handlebars handlebars = new Handlebars(loader);
-
-        Template template = handlebars.compile("user/list");
-        String result = template.apply(users);
-        return IOUtils.decodeData(result).getBytes(StandardCharsets.UTF_8);
+        httpResponse
+                .addRedirectionLocationHeader(LOGIN_PAGE)
+                .send(HttpResponseStatusCode.FOUND)
+                .build();
     }
 
 }

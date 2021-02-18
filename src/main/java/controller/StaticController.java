@@ -4,7 +4,6 @@ import request.HttpRequest;
 import response.HttpResponse;
 import response.HttpResponseStatusCode;
 import utils.FileIoUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -20,11 +19,11 @@ public class StaticController extends AbstractController {
     public void service(HttpRequest httpRequest, HttpResponse httpResponse) {
         if (fileExist(TEMPLATES_FILE_PATH, httpRequest.getPath())) {
             makeResponse(TEMPLATES_PATH_PREFIX, httpRequest.getPath(), httpResponse);
+            return;
         }
         if (fileExist(STATIC_FILE_PATH, httpRequest.getPath())) {
             makeResponse(STATIC_PATH_PREFIX, httpRequest.getPath(), httpResponse);
         }
-
     }
 
     private boolean fileExist(String filePath, String uri) {
@@ -32,15 +31,19 @@ public class StaticController extends AbstractController {
     }
 
     private void makeResponse(String filePathPrefix, String path, HttpResponse httpResponse) {
-        byte[] body = new byte[0];
+        byte[] body;
         try {
             body = FileIoUtils.loadFileFromClasspath(filePathPrefix + path);
-            httpResponse.addContentTypeHeader(path);
-            httpResponse.addContentLengthHeader(body.length);
-            httpResponse.addResponseBody(body);
-            httpResponse.send(HttpResponseStatusCode.OK);
+            httpResponse
+                    .addContentTypeHeader(path)
+                    .addContentLengthHeader(body.length)
+                    .addResponseBody(body)
+                    .send(HttpResponseStatusCode.OK)
+                    .build();
         } catch (IOException | URISyntaxException e) {
-            e.printStackTrace();
+            httpResponse
+                    .send(HttpResponseStatusCode.NOT_FOUND)
+                    .build();
         }
     }
 

@@ -20,7 +20,15 @@ import java.util.Map;
 public class HttpResponse {
 
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);
+    private static final String CONTENT_TYPE = "Content-Type";
+    private static final String LOCATION = "Location";
+    private static final String CONTENT_LENGTH = "Content-Length";
+    private static final String SET_COOKIE = "Set-Cookie";
+    private static final String HTML_TYPE = "text/html;charset=utf-8";
+    private static final String CSS_TYPE = "text/css;charset=utf-8";
+    private static final String JS_TYPE = "text/javascript;charset=utf-8";
     private DataOutputStream dos;
+    private HttpResponseStatusCode httpResponseStatusCode;
     private Map<String, String> header = new HashMap<>();
     private byte[] body;
 
@@ -33,16 +41,20 @@ public class HttpResponse {
         header.put(key, value);
     }
 
-    public void send(HttpResponseStatusCode responseStatusCode){
+    public HttpResponse send(HttpResponseStatusCode responseStatusCode){
+        this.httpResponseStatusCode = responseStatusCode;
+        return this;
+    }
+    public void build(){
         //response header
-        writeHeader(responseStatusCode);
+        writeHeader();
 
         //response body
         writeBody();
     }
-    private void writeHeader(HttpResponseStatusCode responseStatusCode) {
+    private void writeHeader() {
         try {
-            this.dos.writeBytes(responseStatusCode.getMessage() + "\r\n");
+            this.dos.writeBytes(this.httpResponseStatusCode.getMessage() + "\r\n");
             for (String key : this.header.keySet()) {
                 this.dos.writeBytes(key + ": " + this.header.get(key) + "\r\n");
             }
@@ -65,37 +77,45 @@ public class HttpResponse {
         }
     }
 
-    public void addContentTypeHeader(String path){
+    public HttpResponse addContentTypeHeader(String path){
         if(path.matches(".*\\.html")){
-            addHeader("Content-Type", "text/html;charset=utf-8");
-            return;
+            addHeader(CONTENT_TYPE, HTML_TYPE);
+            return this;
         }
         if(path.matches(".*\\.css")){
-            addHeader("Content-Type", "text/css;charset=utf-8");
-            return;
+            addHeader(CONTENT_TYPE, CSS_TYPE);
+            return this;
         }
         if(path.matches(".*\\.js")){
-            addHeader("Content-Type", "text/javascript;charset=utf-8");
-            return;
+            addHeader(CONTENT_TYPE, JS_TYPE);
+            return this;
         }
+        return this;
     }
 
-    public void addRedirectionLocationHeader(String location){
-        addHeader("Location", "http://localhost:8080" + location);
+    public HttpResponse addRedirectionLocationHeader(String location){
+        addHeader(LOCATION,  location);
+        return this;
     }
 
-    public void addContentLengthHeader(int lengthOfBodyContent){
-        addHeader("Content-Length", Integer.toString(lengthOfBodyContent));
+    public HttpResponse addContentLengthHeader(int lengthOfBodyContent){
+        addHeader(CONTENT_LENGTH, Integer.toString(lengthOfBodyContent));
+        return this;
     }
 
-    public void addSetCookieHeader(boolean isLogined){
-        if(isLogined){
-            addHeader("Set-Cookie", "logined=true; Path=/");
-        }
+    public HttpResponse addSetCookieHeaderSessionId(String sessionId){
+        addHeader(SET_COOKIE, "session="+ sessionId);
+        return this;
     }
 
-    public void addResponseBody(byte[] body) {
+    public HttpResponse addDeleteCookieHeader(){
+        addHeader(SET_COOKIE, "expires=Thu, 01 Jan 1970 00:00:00 GMT");
+        return this;
+    }
+
+    public HttpResponse addResponseBody(byte[] body) {
         this.body = body;
+        return this;
     }
 
 }

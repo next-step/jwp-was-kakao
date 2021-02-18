@@ -5,6 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,11 +14,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class RequestUriTest {
 
     private RequestUri requestUri;
-
+    private String requestUriLine = "GET /user/create?userId=javajigi&password=password&name=%EB%B0%95%EC%9E%AC%EC%84%B1&email=javajigi%40slipp.net HTTP/1.1\n";
     @BeforeEach
-    public void setup() {
-        String line = "GET /user/create?userId=javajigi&password=password&name=%EB%B0%95%EC%9E%AC%EC%84%B1&email=javajigi%40slipp.net HTTP/1.1\n";
-        requestUri = RequestUri.from(line);
+    public void setup() throws IOException {
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(requestUriLine.getBytes(StandardCharsets.UTF_8));
+        BufferedReader br = new BufferedReader(new InputStreamReader(byteArrayInputStream));
+        requestUri = RequestUri.from(br.readLine());
     }
 
     @DisplayName("주어진 첫 라인에서 메서드를 추출하여 getRequestMethod 로 이를 반환한다.")
